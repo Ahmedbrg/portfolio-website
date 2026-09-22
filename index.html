@@ -449,13 +449,15 @@ a{text-decoration:none;color:inherit}
 .ct-heading{font-size:1.5rem;font-weight:700;color:var(--text);letter-spacing:-.03em;margin-bottom:.5rem}
 .ct-sub{font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:1.5rem}
 .ct-links{display:flex;flex-direction:column;gap:.5rem}
+.ct-link-wrap{position:relative;display:flex;align-items:stretch;gap:0}
 .ct-link{
-  display:flex;align-items:center;gap:.75rem;
+  flex:1;display:flex;align-items:center;gap:.75rem;
   padding:.7rem 1rem;
   background:rgba(255,255,255,.02);border:1px solid var(--border);
   border-radius:5px;transition:all .2s;color:var(--text);
   position:relative;overflow:hidden;
 }
+.ct-link-wrap .ct-link{border-radius:5px 0 0 5px;border-right:none}
 [data-theme="light"] .ct-link{background:rgba(0,0,0,.02)}
 .ct-link::before{
   content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
@@ -466,6 +468,32 @@ a{text-decoration:none;color:inherit}
 .ct-link-icon{font-size:1rem;width:24px;text-align:center}
 .ct-link-label{font-family:var(--mono);font-size:.62rem;color:var(--muted);display:block}
 .ct-link-val{font-size:.78rem;font-weight:500}
+.ct-copy-btn{
+  display:flex;align-items:center;justify-content:center;
+  width:38px;flex-shrink:0;
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--border);border-left:none;
+  border-radius:0 5px 5px 0;
+  color:var(--muted);cursor:pointer;
+  transition:all .2s;position:relative;overflow:hidden;
+}
+[data-theme="light"] .ct-copy-btn{background:rgba(0,0,0,.02)}
+.ct-copy-btn:hover{background:rgba(34,211,160,.06);color:var(--g);border-color:rgba(34,211,160,.25)}
+.ct-copy-btn.copied{background:rgba(34,211,160,.12);color:var(--g);border-color:rgba(34,211,160,.3)}
+.ct-copy-btn.copied svg{display:none}
+.ct-copy-btn.copied::after{content:'✓';font-family:var(--mono);font-size:.75rem;color:var(--g)}
+.ct-copy-inline{
+  display:flex;align-items:center;gap:.35rem;
+  font-family:var(--mono);font-size:.58rem;
+  color:var(--muted);
+  border:1px solid var(--border);
+  padding:.2rem .55rem;border-radius:3px;
+  transition:all .2s;white-space:nowrap;flex-shrink:0;
+}
+#email-row:hover .ct-copy-inline{border-color:rgba(34,211,160,.3);color:var(--g)}
+.ct-copy-inline.copied{border-color:rgba(34,211,160,.4);color:var(--g);background:rgba(34,211,160,.06)}
+.ct-copy-inline.copied svg{display:none}
+.ct-copy-inline.copied span::before{content:'✓  '}
 
 /* ── FOOTER ── */
 footer{
@@ -775,7 +803,14 @@ footer span{color:var(--g)}
     </div>
     <div class="ct-block">
       <div class="ct-links">
-        <a href="mailto:hamoudabargougui@gmail.com" class="ct-link"><div class="ct-link-icon">📧</div><div><div class="ct-link-label">EMAIL</div><div class="ct-link-val">hamoudabargougui@gmail.com</div></div></a>
+        <div class="ct-link" id="email-row" style="cursor:pointer" onclick="copyEmail(this)">
+          <div class="ct-link-icon">📧</div>
+          <div style="flex:1"><div class="ct-link-label">EMAIL</div><div class="ct-link-val">hamoudabargougui@gmail.com</div></div>
+          <div id="copy-btn" class="ct-copy-inline">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>COPY</span>
+          </div>
+        </div>
         <a href="https://linkedin.com/in/ahmedbargougui" class="ct-link" target="_blank"><div class="ct-link-icon">💼</div><div><div class="ct-link-label">LINKEDIN</div><div class="ct-link-val">linkedin.com/in/ahmedbargougui</div></div></a>
         <a href="https://github.com/Ahmedbrg" class="ct-link" target="_blank"><div class="ct-link-icon">🐙</div><div><div class="ct-link-label">GITHUB</div><div class="ct-link-val">github.com/Ahmedbrg</div></div></a>
         <a href="ahmed_bargougui_cv.pdf" download class="ct-link"><div class="ct-link-icon">📄</div><div><div class="ct-link-label">RESUME</div><div class="ct-link-val">ahmed_bargougui_cv.pdf</div></div></a>
@@ -792,16 +827,16 @@ footer span{color:var(--g)}
 <script>
 // ── THEME CHOICE LOADER ──
 const loader = document.getElementById('loader');
+
 function chooseTheme(e, theme) {
-  // ripple
   const card = e.currentTarget;
+  // ripple
   const r = document.createElement('div');
   r.className = 'lcard-ripple';
   const rect = card.getBoundingClientRect();
   const size = Math.max(rect.width, rect.height);
   r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
   card.appendChild(r);
-  // apply theme then fade out
   setTimeout(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
@@ -810,7 +845,13 @@ function chooseTheme(e, theme) {
     setTimeout(() => loader.classList.add('done'), 600);
   }, 220);
 }
-// always show the choice screen
+
+// auto-detect system theme and skip loader instantly
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const autoTheme = systemDark ? 'dark' : 'light';
+document.documentElement.setAttribute('data-theme', autoTheme);
+localStorage.setItem('theme', autoTheme);
+loader.classList.add('done');
 
 // ── CURSOR ──
 const cur=document.getElementById('cur');
@@ -876,6 +917,25 @@ reveals.forEach(r=>obs.observe(r));
 setTimeout(()=>reveals.forEach(r=>{
   if(r.getBoundingClientRect().top<window.innerHeight)r.classList.add('in');
 }),100);
+
+// ── COPY EMAIL ──
+
+// ── COPY EMAIL ──
+function copyEmail(el) {
+  const copyDiv = el.querySelector('#copy-btn') || el;
+  navigator.clipboard.writeText('hamoudabargougui@gmail.com').then(() => {
+    copyDiv.classList.add('copied');
+    setTimeout(() => copyDiv.classList.remove('copied'), 2200);
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = 'hamoudabargougui@gmail.com';
+    document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    copyDiv.classList.add('copied');
+    setTimeout(() => copyDiv.classList.remove('copied'), 2200);
+  });
+}
 
 // ── SMOOTH SCROLL ──
 document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
